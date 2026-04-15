@@ -1,0 +1,157 @@
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
+import { 
+  Instagram, 
+  MapPin, 
+  ExternalLink, 
+  Navigation,
+  Loader2,
+  Map
+} from 'lucide-react';
+
+// --- CONFIGURACIÓN DE FIREBASE ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'isfd-19-redes';
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [data, setData] = useState({ instagram: '', direccion: '' });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInAnonymously(auth);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (err) {
+        console.error("Error de autenticación:", err);
+      }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Escuchamos el documento "redes" para extraer específicamente Instagram y Dirección
+    const redesRef = doc(db, 'artifacts', appId, 'public', 'data', 'cartelera', 'redes');
+    const unsubscribe = onSnapshot(redesRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const items = snapshot.data().items || [];
+        
+        // Filtramos los datos específicos que necesitamos
+        const ig = items.find(i => i.titulo.toLowerCase().includes('inst'))?.detalle || '';
+        const dir = items.find(i => i.titulo.toLowerCase().includes('direc') || i.titulo.toLowerCase().includes('mapa'))?.detalle || 'Almafuerte 565, Mar del Plata';
+        
+        setData({ instagram: ig, direccion: dir });
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error("Error cargando datos:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // Función para abrir Google Maps con la dirección
+  const openMaps = () => {
+    const query = encodeURIComponent(data.direccion);
+    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+  };
+
+  // Función para abrir Instagram
+  const openInstagram = () => {
+    if (!data.instagram) return;
+    const url = data.instagram.startsWith('http') ? data.instagram : `https://instagram.com/${data.instagram.replace('@', '')}`;
+    window.open(url, '_blank');
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center p-6 font-sans">
+      <div className="w-full max-w-md mt-12 bg-white rounded-[2rem] shadow-xl shadow-blue-900/5 overflow-hidden border border-slate-100">
+        
+        {/* Cabecera Estilizada */}
+        <div className="bg-blue-600 p-8 text-center relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+          <div className="relative z-10">
+            <div className="w-20 h-20 bg-white rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-4">
+              <span className="text-blue-600 font-black text-3xl">19</span>
+            </div>
+            <h1 className="text-white font-bold text-xl tracking-tight uppercase">ISFD Nº 19</h1>
+            <p className="text-blue-100 text-xs font-medium opacity-80 uppercase tracking-widest mt-1">Mar del Plata</p>
+          </div>
+        </div>
+
+        {/* Contenido Principal */}
+        <div className="p-8 space-y-6">
+          {loading ? (
+            <div className="flex flex-col items-center py-10">
+              <Loader2 className="w-6 h-6 text-blue-600 animate-spin mb-2" />
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Actualizando información...</p>
+            </div>
+          ) : (
+            <>
+              {/* Sección Instagram */}
+              <button 
+                onClick={openInstagram}
+                disabled={!data.instagram}
+                className="w-full group flex items-center gap-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-pink-100 transition-all hover:scale-[1.02] active:scale-95 text-left"
+              >
+                <div className="w-12 h-12 bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-md">
+                  <Instagram className="w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[10px] font-bold text-pink-600 uppercase tracking-wider mb-0.5">Instagram Oficial</p>
+                  <p className="text-slate-800 font-bold text-sm truncate">
+                    {data.instagram ? `@${data.instagram.split('/').pop().replace('@', '')}` : 'No disponible'}
+                  </p>
+                </div>
+                <ExternalLink className="w-4 h-4 text-pink-300 group-hover:text-pink-500" />
+              </button>
+
+              {/* Sección Dirección */}
+              <button 
+                onClick={openMaps}
+                className="w-full group flex items-center gap-4 p-4 bg-blue-50 rounded-2xl border border-blue-100 transition-all hover:scale-[1.02] active:scale-95 text-left"
+              >
+                <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-md">
+                  <MapPin className="w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5">Ubicación</p>
+                  <p className="text-slate-800 font-bold text-sm leading-tight">
+                    {data.direccion || 'Almafuerte 565'}
+                  </p>
+                </div>
+                <Navigation className="w-4 h-4 text-blue-300 group-hover:text-blue-500" />
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Footer info */}
+        <div className="px-8 pb-8 pt-2">
+          <div className="bg-slate-50 rounded-xl p-4 flex items-center justify-center gap-3">
+             <Map className="w-4 h-4 text-slate-400" />
+             <span className="text-[11px] text-slate-500 font-medium">Presiona sobre la ubicación para abrir GPS</span>
+          </div>
+        </div>
+      </div>
+
+      <p className="mt-8 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+        Instituto Superior de Formación Docente
+      </p>
+    </div>
+  );
+}
