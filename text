@@ -1,0 +1,4 @@
+const REDES_SOCIALES = {
+  instagram: "https://instagram.com/mes_isfd19",
+  facebook: "https://facebook.com/mes_isfd19",
+};
