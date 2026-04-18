@@ -3,199 +3,277 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cartelera ISFD 19</title>
-    
-    <!-- Librerías Necesarias -->
+    <title>MES | Movimiento Estudiantil</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: #0f172a; 
-            color: #f8fafc;
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
+        :root {
+            --primary: #3b82f6;
+            --bg: #030712;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
         }
-        .bg-app {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -1;
-            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            color: #ffffff;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .dia-activo { 
-            background: #38bdf8; 
-            color: #0f172a !important; 
+
+        .glass {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+        }
+
+        .tab-active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px -5px rgba(56, 189, 248, 0.4);
         }
-        .card-clase {
-            background: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(51, 65, 85, 0.5);
-            transition: all 0.2s;
+
+        .nav-bottom {
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+
+        .btn-press:active {
+            transform: scale(0.95);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        .card-shine {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card-shine::after {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.03), transparent);
+            transform: rotate(45deg);
+            transition: 0.5s;
+        }
+
+        .section-view {
+            display: none;
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        .section-view.active {
+            display: block;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .anim-fade { animation: fadeIn 0.4s ease-out forwards; }
     </style>
 </head>
-<body>
-    <div class="bg-app"></div>
-    <div id="root"></div>
+<body class="min-h-screen">
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+    <!-- Header / Branding -->
+    <header class="p-6 pt-8 text-center animate__animated animate__fadeIn">
+        <div class="inline-flex items-center justify-center p-4 bg-blue-600 rounded-[2.5rem] shadow-2xl shadow-blue-500/20 mb-4 transform hover:rotate-6 transition-transform">
+            <span class="text-3xl font-black italic tracking-tighter">MES</span>
+        </div>
+        <h1 class="text-3xl font-extrabold tracking-tighter mb-1">MOVIMIENTO ESTUDIANTIL</h1>
+        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.4em]">Unidad • Compromiso • Lucha</p>
+    </header>
 
-        // ⚠️ ENLACE CRÍTICO: Asegúrate que termine en pub?output=csv
-        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vReaVS6mnh4C46hwJQp65r_RFHgZsQaWnsJyH7w8pJGdYHcn_R84Wz3hRorPXgBwT7g6-U5ld3S1DF_/pub?output=csv";
-
-        function App() {
-            const [datos, setDatos] = useState([]);
-            const [diaActual, setDiaActual] = useState("");
-            const [busqueda, setBusqueda] = useState("");
-            const [cargando, setCargando] = useState(true);
-            const [logError, setLogError] = useState("");
-
-            useEffect(() => {
-                const dias = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-                const hoy = dias[new Date().getDay()];
-                setDiaActual(hoy === "Domingo" ? "Lunes" : hoy);
-                fetchData();
-            }, []);
-
-            const fetchData = () => {
-                setCargando(true);
-                setLogError("");
-                
-                Papa.parse(SHEET_CSV_URL, {
-                    download: true,
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: (results) => {
-                        if (results.data && results.data.length > 0) {
-                            // Filtramos filas que tengan al menos una materia o aula para evitar basura del Excel
-                            const cleaned = results.data.filter(r => {
-                                const tieneData = r.Materia || r.materia || r.Aula || r.aula;
-                                return tieneData;
-                            });
-                            setDatos(cleaned);
-                            if (cleaned.length === 0) setLogError("La hoja está vacía o las columnas no coinciden.");
-                        } else {
-                            setLogError("No se recibieron datos de Google Sheets.");
-                        }
-                        setCargando(false);
-                    },
-                    error: (err) => {
-                        console.error("Error PapaParse:", err);
-                        setLogError("Error de conexión. Verifica que el Sheets esté 'Publicado en la Web'.");
-                        setCargando(false);
-                    }
-                });
-            };
-
-            const filtrados = useMemo(() => {
-                return datos.filter(h => {
-                    const d = (h.Día || h.dia || h.DIA || "").toString().toLowerCase().trim();
-                    const m = (h.Materia || h.materia || "").toString().toLowerCase();
-                    const c = (h.Carrera || h.carrera || "").toString().toLowerCase();
-                    const current = diaActual.toLowerCase().trim();
-                    
-                    const matchDia = d === current;
-                    const matchBusqueda = m.includes(busqueda.toLowerCase()) || c.includes(busqueda.toLowerCase());
-                    
-                    return matchDia && matchBusqueda;
-                });
-            }, [datos, diaActual, busqueda]);
-
-            return (
-                <div className="max-w-md mx-auto min-h-screen px-4 pt-8 pb-20">
-                    <header className="flex items-center justify-between mb-8">
-                        <div>
-                            <h1 className="text-3xl font-black text-white italic tracking-tighter">ISFD 19</h1>
-                            <p className="text-[10px] font-bold text-sky-500 uppercase tracking-widest mt-1">Cartelera Digital</p>
-                        </div>
-                        <button onClick={fetchData} className={`w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center text-sky-400 ${cargando ? 'opacity-50' : ''}`}>
-                            <i className={`fa-solid fa-sync-alt ${cargando ? 'animate-spin' : ''}`}></i>
-                        </button>
-                    </header>
-
-                    {logError && (
-                        <div className="bg-red-500/20 border border-red-500/50 p-4 rounded-2xl mb-6 text-red-200 text-xs">
-                            <p className="font-bold mb-1"><i className="fa-solid fa-triangle-exclamation mr-2"></i>Atención:</p>
-                            {logError}
-                            <p className="mt-2 opacity-70 italic">Asegúrate de haber ido a Archivo > Compartir > Publicar en la Web en tu Excel.</p>
-                        </div>
-                    )}
-
-                    <div className="relative mb-6">
-                        <i className="fa-solid fa-search absolute left-5 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                        <input 
-                            type="text"
-                            placeholder="Buscar materia o carrera..."
-                            className="w-full h-14 pl-12 pr-4 bg-slate-800/50 border border-slate-700 rounded-2xl outline-none focus:border-sky-500 text-white"
-                            value={busqueda}
-                            onChange={(e) => setBusqueda(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="flex gap-2 overflow-x-auto no-scrollbar mb-8 pb-2">
-                        {["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"].map(d => (
-                            <button 
-                                key={d}
-                                onClick={() => setDiaActual(d)}
-                                className={`px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shrink-0 ${diaActual === d ? 'dia-activo' : 'bg-slate-800/30 text-slate-500 border border-slate-700/50'}`}
-                            >
-                                {d}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="space-y-4">
-                        {cargando ? (
-                            <div className="text-center py-20">
-                                <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Sincronizando Excel...</p>
-                            </div>
-                        ) : filtrados.length > 0 ? (
-                            filtrados.map((h, i) => (
-                                <div key={i} className="card-clase p-5 rounded-[1.8rem] flex justify-between items-center anim-fade" style={{animationDelay: `${i*0.05}s`}}>
-                                    <div className="flex-1 pr-4">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-[8px] font-black bg-sky-500/10 text-sky-400 px-2 py-0.5 rounded uppercase">
-                                                {h.Carrera || h.carrera || 'ISFD 19'}
-                                            </span>
-                                            <span className="text-[9px] font-bold text-slate-500 uppercase">
-                                                <i className="fa-regular fa-clock mr-1"></i>{h.Horario || h.horario || '--:--'}
-                                            </span>
-                                        </div>
-                                        <h3 className="text-lg font-extrabold text-white uppercase leading-tight tracking-tight">
-                                            {h.Materia || h.materia}
-                                        </h3>
-                                    </div>
-                                    <div className="flex flex-col items-center justify-center min-w-[65px] h-[65px] rounded-2xl bg-sky-500 text-slate-950">
-                                        <span className="text-[8px] font-black uppercase opacity-60 mb-0.5">AULA</span>
-                                        <span className="text-2xl font-black leading-none">{h.Aula || h.aula}</span>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="py-20 text-center opacity-30">
-                                <i className="fa-solid fa-calendar-xmark text-5xl mb-4"></i>
-                                <p className="text-xs font-black uppercase tracking-widest">No hay clases registradas hoy</p>
-                            </div>
-                        )}
-                    </div>
+    <!-- Main Content -->
+    <main class="px-5 pb-32 max-w-lg mx-auto">
+        
+        <!-- Vista Enlaces -->
+        <div id="view-links" class="section-view active space-y-4">
+            <h3 class="text-xs font-black text-zinc-600 uppercase tracking-widest ml-2 mb-4">Accesos Directos</h3>
+            
+            <a href="https://www.instagram.com/mes_isfd19/" target="_blank" class="glass card-shine p-5 rounded-[2rem] flex items-center group btn-press">
+                <div class="w-14 h-14 bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] rounded-2xl flex items-center justify-center text-white mr-4 shadow-lg group-hover:scale-105 transition-transform">
+                    <i class="fab fa-instagram text-2xl"></i>
                 </div>
-            );
+                <div class="flex-1">
+                    <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Instagram Estudiantil</span>
+                    <p class="font-bold text-lg text-white">@mes_isfd19</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                    <i class="fas fa-arrow-up-right-from-square text-xs text-zinc-500"></i>
+                </div>
+            </a>
+
+            <a href="https://www.google.com/maps/search/?api=1&query=Almafuerte+565+Mar+del+Plata" target="_blank" class="glass card-shine p-5 rounded-[2rem] flex items-center group btn-press">
+                <div class="w-14 h-14 bg-blue-600/20 rounded-2xl flex items-center justify-center text-blue-500 mr-4 shadow-lg">
+                    <i class="fas fa-location-dot text-2xl"></i>
+                </div>
+                <div class="flex-1">
+                    <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Sede Central</span>
+                    <p class="font-bold text-lg text-white">Almafuerte 565</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                    <i class="fas fa-map text-xs text-zinc-500"></i>
+                </div>
+            </a>
+
+            <a href="#" class="glass card-shine p-5 rounded-[2rem] flex items-center group btn-press">
+                <div class="w-14 h-14 bg-indigo-600/20 rounded-2xl flex items-center justify-center text-indigo-400 mr-4">
+                    <i class="fas fa-paper-plane text-2xl"></i>
+                </div>
+                <div class="flex-1">
+                    <span class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Comunicados</span>
+                    <p class="font-bold text-lg text-white">Canal Telegram</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-xs font-bold text-zinc-500">PRÓX.</div>
+            </a>
+        </div>
+
+        <!-- Vista Cartelera -->
+        <div id="view-cartelera" class="section-view space-y-6">
+            <div class="flex items-center justify-between ml-2">
+                <h3 class="text-xs font-black text-zinc-600 uppercase tracking-widest">Horarios y Aulas</h3>
+                <span class="bg-green-500/10 text-green-500 text-[8px] font-black px-2 py-1 rounded-full uppercase tracking-tighter ring-1 ring-green-500/20">En Vivo</span>
+            </div>
+
+            <!-- Selector de Días -->
+            <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                <button onclick="setDay('Lunes')" class="day-btn bg-blue-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-600/20">Lunes</button>
+                <button onclick="setDay('Martes')" class="day-btn glass text-zinc-500 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Martes</button>
+                <button onclick="setDay('Miércoles')" class="day-btn glass text-zinc-500 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Miércoles</button>
+                <button onclick="setDay('Jueves')" class="day-btn glass text-zinc-500 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Jueves</button>
+            </div>
+
+            <div id="aulas-container" class="space-y-3">
+                <!-- Se inyecta dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Vista Info -->
+        <div id="view-info" class="section-view space-y-6">
+            <div class="glass p-8 rounded-[2.5rem] text-center space-y-4">
+                <i class="fas fa-circle-info text-4xl text-blue-500"></i>
+                <h3 class="text-xl font-black italic">¿Qué es el MES?</h3>
+                <p class="text-sm text-zinc-400 leading-relaxed font-medium">
+                    El Movimiento Estudiantil es la herramienta de organización para defender nuestros derechos y construir una mejor cursada para todos.
+                </p>
+                <div class="pt-4 flex flex-col gap-2">
+                    <div class="p-3 bg-white/5 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-zinc-500">Versión 2.0 Build 2024</div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Navegación Inferior -->
+    <nav class="nav-bottom fixed bottom-0 left-0 right-0 p-4 pb-8 z-50">
+        <div class="max-w-md mx-auto flex items-center justify-around">
+            <button onclick="switchTab('links')" id="nav-links" class="flex flex-col items-center gap-1 text-blue-500 transition-all">
+                <div class="p-2 rounded-2xl bg-blue-500/10"><i class="fas fa-house-chimney text-xl"></i></div>
+                <span class="text-[8px] font-black uppercase tracking-widest">Inicio</span>
+            </button>
+            <button onclick="switchTab('cartelera')" id="nav-cartelera" class="flex flex-col items-center gap-1 text-zinc-500 transition-all opacity-60">
+                <div class="p-2 rounded-2xl"><i class="fas fa-calendar-days text-xl"></i></div>
+                <span class="text-[8px] font-black uppercase tracking-widest">Cartelera</span>
+            </button>
+            <button onclick="switchTab('info')" id="nav-info" class="flex flex-col items-center gap-1 text-zinc-500 transition-all opacity-60">
+                <div class="p-2 rounded-2xl"><i class="fas fa-circle-nodes text-xl"></i></div>
+                <span class="text-[8px] font-black uppercase tracking-widest">Info</span>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        // Cambio de pestañas
+        function switchTab(tabId) {
+            document.querySelectorAll('.section-view').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${tabId}`).classList.add('active');
+
+            // Actualizar Estética Nav
+            const navs = ['links', 'cartelera', 'info'];
+            navs.forEach(n => {
+                const btn = document.getElementById(`nav-${n}`);
+                if(n === tabId) {
+                    btn.classList.add('text-blue-500');
+                    btn.classList.remove('text-zinc-500', 'opacity-60');
+                    btn.querySelector('div').classList.add('bg-blue-500/10');
+                } else {
+                    btn.classList.remove('text-blue-500');
+                    btn.classList.add('text-zinc-500', 'opacity-60');
+                    btn.querySelector('div').classList.remove('bg-blue-500/10');
+                }
+            });
+
+            if(tabId === 'cartelera') renderAulas();
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        // Sistema de Cartelera
+        const dataAulas = [
+            { mat: "Persp. Filosófica", car: "Primaria", aul: "12", hor: "18:00", dia: "Lunes" },
+            { mat: "Psicología", car: "Inglés", aul: "04", hor: "18:20", dia: "Lunes" },
+            { mat: "Fonética I", car: "Inglés", aul: "Lab", hor: "20:00", dia: "Martes" },
+            { mat: "Didáctica Gral", car: "Historia", aul: "05", hor: "18:00", dia: "Lunes" }
+        ];
+
+        let diaFiltro = "Lunes";
+
+        function setDay(day) {
+            diaFiltro = day;
+            document.querySelectorAll('.day-btn').forEach(btn => {
+                const isSelected = btn.innerText === day;
+                btn.className = isSelected ? 
+                    'day-btn bg-blue-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg' : 
+                    'day-btn glass text-zinc-500 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all';
+            });
+            renderAulas();
+        }
+
+        function renderAulas() {
+            const container = document.getElementById('aulas-container');
+            const items = dataAulas.filter(a => a.dia === diaFiltro);
+
+            if(items.length === 0) {
+                container.innerHTML = `
+                    <div class="glass p-10 rounded-[2.5rem] text-center opacity-40">
+                        <i class="fas fa-folder-open text-2xl mb-2"></i>
+                        <p class="text-[10px] font-bold uppercase tracking-widest">No hay datos registrados</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = items.map(a => `
+                <div class="glass p-6 rounded-[2.2rem] flex items-center justify-between hover:bg-white/5 transition-colors">
+                    <div class="space-y-1">
+                        <span class="text-[8px] font-black text-blue-500 uppercase tracking-widest">${a.car}</span>
+                        <h4 class="font-extrabold text-white leading-tight tracking-tight">${a.mat}</h4>
+                        <div class="flex items-center text-zinc-500 text-[9px] font-bold uppercase">
+                            <i class="far fa-clock mr-1.5 text-blue-500"></i> ${a.hor} hs
+                        </div>
+                    </div>
+                    <div class="bg-blue-600/10 border border-blue-500/20 px-5 py-3 rounded-2xl text-center min-w-[70px]">
+                        <p class="text-[7px] font-black text-blue-500 uppercase tracking-widest mb-1">AULA</p>
+                        <p class="text-xl font-black text-white italic tracking-tighter">${a.aul}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
     </script>
 </body>
 </html>
